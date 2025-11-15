@@ -3,12 +3,12 @@ import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import React, { useEffect, useState } from "react";
 import {
-    FlatList,
-    RefreshControl,
-    StyleSheet,
-    Text,
-    TouchableOpacity,
-    View,
+  FlatList,
+  RefreshControl,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
 } from "react-native";
 import { api } from "../../src/api/client";
 import { useAuth } from "../../src/context/AuthContext";
@@ -105,7 +105,15 @@ export default function EventsListScreen() {
         </View>
 
         <View style={styles.headerActions}>
-          {/* Icône filtre placeholder pour plus tard */}
+          {/* Créer un event */}
+          <TouchableOpacity
+            style={styles.iconButton}
+            onPress={() => router.push("/events/create")}
+          >
+            <Ionicons name="add-circle-outline" size={24} color={colors.primary} />
+          </TouchableOpacity>
+
+          {/* Filtre placeholder pour plus tard */}
           <TouchableOpacity
             style={styles.iconButton}
             onPress={() => {

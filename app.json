@@ -1,17 +1,23 @@
 {
   "expo": {
-    "name": "loners-app",
-    "slug": "loners-app",
+    "name": "loners",
+    "slug": "loners",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
-    "scheme": "lonersapp",
+    "scheme": "loners",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
     "ios": {
       "supportsTablet": true
     },
     "android": {
+      "package": "com.loners",
+      "config": {
+        "googleMaps": {
+          "apiKey": "AIzaSyDWSwIhlBNufZwvAgDhn-GESpr34OkQsKE"
+        }
+      },
       "adaptiveIcon": {
         "backgroundColor": "#E6F4FE",
         "foregroundImage": "./assets/images/android-icon-foreground.png",
@@ -43,6 +49,14 @@
     "experiments": {
       "typedRoutes": true,
       "reactCompiler": true
-    }
+    },
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "5f0ae73f-2e06-4025-88af-b2372f86efe7"
+      },
+      "placesApiKey": "AIzaSyDjqstxmPen-umgfC7xmkUAgL_no0ooGjE"
+    },
+    "owner": "killiann"
   }
 }
