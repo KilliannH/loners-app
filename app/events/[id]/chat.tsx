@@ -270,8 +270,7 @@ export default function EventChatScreen() {
           style={[
             styles.inputBar,
             {
-              paddingBottom:
-                insets.bottom > 0 ? insets.bottom : spacing.sm,
+              paddingBottom:spacing.sm,
             },
           ]}
         >
