@@ -1,8 +1,10 @@
 // app/events/index.tsx
 import { Ionicons } from "@expo/vector-icons";
+import * as Location from "expo-location";
 import { useRouter } from "expo-router";
 import React, { useEffect, useState } from "react";
 import {
+  Alert,
   FlatList,
   RefreshControl,
   StyleSheet,
@@ -19,16 +21,109 @@ import type { Event } from "../../src/types/api";
 export default function EventsListScreen() {
   const [events, setEvents] = useState<Event[]>([]);
   const [loading, setLoading] = useState(false);
+  const [userLocation, setUserLocation] = useState<{
+    latitude: number;
+    longitude: number;
+  } | null>(null);
+  const [locationPermission, setLocationPermission] = useState(false);
   const { user } = useAuth();
   const router = useRouter();
+
+  // Demander la permission de localisation
+  const requestLocationPermission = async () => {
+    try {
+      const { status } = await Location.requestForegroundPermissionsAsync();
+      if (status !== "granted") {
+        Alert.alert(
+          "Permission refusée",
+          "Loners a besoin de ta localisation pour te montrer les événements autour de toi."
+        );
+        return false;
+      }
+      setLocationPermission(true);
+      return true;
+    } catch (error) {
+      console.log("Error requesting location permission:", error);
+      return false;
+    }
+  };
+
+  // Récupérer la position actuelle
+  const getCurrentLocation = async () => {
+    try {
+      const location = await Location.getCurrentPositionAsync({
+        accuracy: Location.Accuracy.Balanced,
+        timeInterval: 5000,
+        distanceInterval: 0,
+      });
+      setUserLocation({
+        latitude: location.coords.latitude,
+        longitude: location.coords.longitude,
+      });
+      return {
+        latitude: location.coords.latitude,
+        longitude: location.coords.longitude,
+      };
+    } catch (error) {
+      console.log("Error getting location:", error);
+      
+      // Sur émulateur ou en cas d'erreur, utiliser une position par défaut (Paris)
+      const defaultLocation = {
+        latitude: 48.8566,
+        longitude: 2.3522,
+      };
+      
+      Alert.alert(
+        "Position par défaut",
+        "Impossible de récupérer ta position. Utilisation de Paris comme position par défaut. Configure la localisation dans ton émulateur.",
+        [{ text: "OK" }]
+      );
+      
+      setUserLocation(defaultLocation);
+      return defaultLocation;
+    }
+  };
 
   const fetchEvents = async () => {
     try {
       setLoading(true);
-      const res = await api.get<Event[]>("/events");
+
+      // Vérifier et demander la permission
+      const hasPermission =
+        locationPermission || (await requestLocationPermission());
+      if (!hasPermission) {
+        // Même sans permission, on essaie d'utiliser une position par défaut
+        const defaultLocation = { latitude: 48.8566, longitude: 2.3522 };
+        const radiusKm = user?.radiusKm || 10;
+        
+        const res = await api.get<Event[]>(
+          `/events/nearby?lat=${defaultLocation.latitude}&lon=${defaultLocation.longitude}&radiusKm=${radiusKm}`
+        );
+        setEvents(res.data);
+        setLoading(false);
+        return;
+      }
+
+      // Récupérer la position
+      const location = userLocation || (await getCurrentLocation());
+      if (!location) {
+        setLoading(false);
+        return;
+      }
+
+      // Utiliser le rayon de l'utilisateur (par défaut 10km)
+      const radiusKm = user?.radiusKm || 10;
+
+      const res = await api.get<Event[]>(
+        `/events/nearby?lat=${location.latitude}&lon=${location.longitude}&radiusKm=${radiusKm}`
+      );
       setEvents(res.data);
     } catch (err) {
       console.log("Error fetching events", err);
+      Alert.alert(
+        "Erreur",
+        "Impossible de charger les événements. Vérifie ta connexion."
+      );
     } finally {
       setLoading(false);
     }
@@ -101,14 +196,16 @@ export default function EventsListScreen() {
             Salut {user?.username ?? "toi"} 👋
           </Text>
           <Text style={styles.subtitleMuted}>
-            Découvre ce qui se passe autour de toi.
+            {userLocation
+              ? `Événements dans un rayon de ${user?.radiusKm || 10}km`
+              : "Découvre ce qui se passe autour de toi."}
           </Text>
         </View>
 
         <TouchableOpacity
           style={styles.filterButton}
           onPress={() => {
-            // Placeholder pour les filtres
+            router.push("/profile");
           }}
         >
           <Ionicons name="options-outline" size={22} color={colors.text} />

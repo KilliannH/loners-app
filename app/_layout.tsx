@@ -1,5 +1,6 @@
 // app/_layout.tsx
 import { Stack } from "expo-router";
+import { StatusBar } from "expo-status-bar";
 import React from "react";
 import { ActivityIndicator, View } from "react-native";
 import { SafeAreaProvider } from "react-native-safe-area-context";
@@ -18,25 +19,29 @@ function RootLayoutInner() {
           backgroundColor: "#F7F9FC",
         }}
       >
+        <StatusBar style="dark" />
         <ActivityIndicator size="large" color="#6366F1" />
       </View>
     );
   }
 
   return (
-    <Stack
-      screenOptions={{
-        headerShown: false,
-        animation: "fade",
-      }}
-    >
-      <Stack.Screen name="index" />
-      <Stack.Screen name="events/index" />
-      <Stack.Screen name="events/[id]" />
-      <Stack.Screen name="events/[id]/chat" />
-      <Stack.Screen name="events/create" />
-      <Stack.Screen name="profile/index" />
-    </Stack>
+    <>
+      <StatusBar style="dark" />
+      <Stack
+        screenOptions={{
+          headerShown: false,
+          animation: "fade",
+        }}
+      >
+        <Stack.Screen name="index" />
+        <Stack.Screen name="events/index" />
+        <Stack.Screen name="events/[id]" />
+        <Stack.Screen name="events/[id]/chat" />
+        <Stack.Screen name="events/create" />
+        <Stack.Screen name="profile/index" />
+      </Stack>
+    </>
   );
 }
 

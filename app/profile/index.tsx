@@ -1,20 +1,27 @@
 // app/profile/index.tsx
 import { Ionicons } from "@expo/vector-icons";
-import React from "react";
+import React, { useState } from "react";
 import {
     Alert,
+    Modal,
     ScrollView,
     StyleSheet,
     Text,
     TouchableOpacity,
     View,
 } from "react-native";
+import { api } from "../../src/api/client";
 import { BottomNav } from "../../src/components/BottomNav";
+import { PrimaryButton } from "../../src/components/PrimaryButton";
 import { useAuth } from "../../src/context/AuthContext";
 import { colors, radius, spacing, typography } from "../../src/styles/theme";
 
 export default function ProfileScreen() {
   const { user, signOut } = useAuth();
+  const [showRadiusModal, setShowRadiusModal] = useState(false);
+  const [updatingRadius, setUpdatingRadius] = useState(false);
+
+  const radiusOptions = [5, 10, 20, 50, 100];
 
   const handleSignOut = () => {
     Alert.alert(
@@ -25,6 +32,21 @@ export default function ProfileScreen() {
         { text: "Déconnexion", style: "destructive", onPress: signOut },
       ]
     );
+  };
+
+  const handleUpdateRadius = async (newRadius: number) => {
+    try {
+      setUpdatingRadius(true);
+      await api.patch("/auth/me", { radiusKm: newRadius });
+      setShowRadiusModal(false);
+      Alert.alert("Rayon mis à jour", `Ton rayon de recherche est maintenant de ${newRadius}km`);
+      // Le user sera rechargé au prochain refresh de la liste
+    } catch (err: any) {
+      console.log("Error updating radius:", err);
+      Alert.alert("Erreur", "Impossible de mettre à jour le rayon de recherche");
+    } finally {
+      setUpdatingRadius(false);
+    }
   };
 
   const getInitials = (username: string) => {
@@ -61,14 +83,22 @@ export default function ProfileScreen() {
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Paramètres</Text>
 
-          <TouchableOpacity style={styles.settingItem}>
+          <TouchableOpacity
+            style={styles.settingItem}
+            onPress={() => setShowRadiusModal(true)}
+          >
             <View style={styles.settingLeft}>
               <Ionicons
-                name="notifications-outline"
+                name="navigate-circle-outline"
                 size={20}
                 color={colors.text}
               />
-              <Text style={styles.settingText}>Notifications</Text>
+              <View style={{ marginLeft: spacing.md }}>
+                <Text style={styles.settingText}>Rayon de recherche</Text>
+                <Text style={styles.settingSubtext}>
+                  {user?.radiusKm || 10} km
+                </Text>
+              </View>
             </View>
             <Ionicons
               name="chevron-forward"
@@ -80,11 +110,11 @@ export default function ProfileScreen() {
           <TouchableOpacity style={styles.settingItem}>
             <View style={styles.settingLeft}>
               <Ionicons
-                name="location-outline"
+                name="notifications-outline"
                 size={20}
                 color={colors.text}
               />
-              <Text style={styles.settingText}>Localisation</Text>
+              <Text style={styles.settingText}>Notifications</Text>
             </View>
             <Ionicons
               name="chevron-forward"
@@ -155,6 +185,68 @@ export default function ProfileScreen() {
 
         <Text style={styles.version}>Version 1.0.0</Text>
       </ScrollView>
+
+      {/* MODAL RAYON DE RECHERCHE */}
+      <Modal
+        visible={showRadiusModal}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setShowRadiusModal(false)}
+      >
+        <TouchableOpacity
+          style={styles.modalOverlay}
+          activeOpacity={1}
+          onPress={() => setShowRadiusModal(false)}
+        >
+          <TouchableOpacity
+            style={styles.modalContent}
+            activeOpacity={1}
+            onPress={(e) => e.stopPropagation()}
+          >
+            <Text style={styles.modalTitle}>Rayon de recherche</Text>
+            <Text style={styles.modalSubtitle}>
+              Choisis le rayon pour trouver des événements autour de toi
+            </Text>
+
+            <View style={styles.radiusOptions}>
+              {radiusOptions.map((radius) => (
+                <TouchableOpacity
+                  key={radius}
+                  style={[
+                    styles.radiusOption,
+                    user?.radiusKm === radius && styles.radiusOptionActive,
+                  ]}
+                  onPress={() => handleUpdateRadius(radius)}
+                  disabled={updatingRadius}
+                >
+                  <Text
+                    style={[
+                      styles.radiusOptionText,
+                      user?.radiusKm === radius &&
+                        styles.radiusOptionTextActive,
+                    ]}
+                  >
+                    {radius} km
+                  </Text>
+                  {user?.radiusKm === radius && (
+                    <Ionicons
+                      name="checkmark-circle"
+                      size={20}
+                      color={colors.primary}
+                    />
+                  )}
+                </TouchableOpacity>
+              ))}
+            </View>
+
+            <PrimaryButton
+              title="Fermer"
+              onPress={() => setShowRadiusModal(false)}
+              variant="ghost"
+            />
+          </TouchableOpacity>
+        </TouchableOpacity>
+      </Modal>
 
       <BottomNav />
     </View>
@@ -246,7 +338,12 @@ const styles = StyleSheet.create({
   settingText: {
     ...typography.body,
     color: colors.text,
-    marginLeft: spacing.md,
+  },
+  settingSubtext: {
+    ...typography.body,
+    fontSize: 12,
+    color: colors.textMuted,
+    marginTop: 2,
   },
   logoutButton: {
     flexDirection: "row",
@@ -270,5 +367,59 @@ const styles = StyleSheet.create({
     color: colors.textMuted,
     textAlign: "center",
     marginTop: spacing.lg,
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: "rgba(0, 0, 0, 0.5)",
+    justifyContent: "center",
+    alignItems: "center",
+    paddingHorizontal: spacing.lg,
+  },
+  modalContent: {
+    backgroundColor: colors.surface,
+    borderRadius: radius.xl,
+    padding: spacing.xl,
+    width: "100%",
+    maxWidth: 400,
+    borderWidth: 1,
+    borderColor: colors.border,
+  },
+  modalTitle: {
+    ...typography.title,
+    fontSize: 22,
+    color: colors.text,
+    marginBottom: spacing.xs,
+  },
+  modalSubtitle: {
+    ...typography.body,
+    color: colors.textMuted,
+    marginBottom: spacing.lg,
+  },
+  radiusOptions: {
+    marginBottom: spacing.lg,
+  },
+  radiusOption: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    backgroundColor: colors.surfaceAlt,
+    borderRadius: radius.lg,
+    padding: spacing.md,
+    marginBottom: spacing.xs,
+    borderWidth: 1,
+    borderColor: colors.border,
+  },
+  radiusOptionActive: {
+    backgroundColor: colors.surface,
+    borderColor: colors.primary,
+  },
+  radiusOptionText: {
+    ...typography.body,
+    color: colors.text,
+    fontWeight: "500",
+  },
+  radiusOptionTextActive: {
+    color: colors.primary,
+    fontWeight: "600",
   },
 });
