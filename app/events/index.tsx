@@ -11,6 +11,7 @@ import {
   View,
 } from "react-native";
 import { api } from "../../src/api/client";
+import { BottomNav } from "../../src/components/BottomNav";
 import { useAuth } from "../../src/context/AuthContext";
 import { colors, radius, spacing, typography } from "../../src/styles/theme";
 import type { Event } from "../../src/types/api";
@@ -18,7 +19,7 @@ import type { Event } from "../../src/types/api";
 export default function EventsListScreen() {
   const [events, setEvents] = useState<Event[]>([]);
   const [loading, setLoading] = useState(false);
-  const { signOut, user } = useAuth();
+  const { user } = useAuth();
   const router = useRouter();
 
   const fetchEvents = async () => {
@@ -104,30 +105,14 @@ export default function EventsListScreen() {
           </Text>
         </View>
 
-        <View style={styles.headerActions}>
-          {/* Créer un event */}
-          <TouchableOpacity
-            style={styles.iconButton}
-            onPress={() => router.push("/events/create")}
-          >
-            <Ionicons name="add-circle-outline" size={24} color={colors.primary} />
-          </TouchableOpacity>
-
-          {/* Filtre placeholder pour plus tard */}
-          <TouchableOpacity
-            style={styles.iconButton}
-            onPress={() => {
-              // plus tard: ouvrir un écran / bottom sheet de filtres
-            }}
-          >
-            <Ionicons name="options-outline" size={22} color={colors.text} />
-          </TouchableOpacity>
-
-          {/* Déconnexion */}
-          <TouchableOpacity style={styles.iconButton} onPress={signOut}>
-            <Ionicons name="log-out-outline" size={22} color={colors.danger} />
-          </TouchableOpacity>
-        </View>
+        <TouchableOpacity
+          style={styles.filterButton}
+          onPress={() => {
+            // Placeholder pour les filtres
+          }}
+        >
+          <Ionicons name="options-outline" size={22} color={colors.text} />
+        </TouchableOpacity>
       </View>
 
       <FlatList
@@ -143,9 +128,9 @@ export default function EventsListScreen() {
             <View style={styles.emptyContainer}>
               <Ionicons
                 name="planet-outline"
-                size={32}
+                size={48}
                 color={colors.textMuted}
-                style={{ marginBottom: 8 }}
+                style={{ marginBottom: 12 }}
               />
               <Text style={styles.emptyText}>
                 Aucun événement pour le moment.
@@ -157,6 +142,8 @@ export default function EventsListScreen() {
           ) : null
         }
       />
+
+      <BottomNav />
     </View>
   );
 }
@@ -188,20 +175,21 @@ const styles = StyleSheet.create({
     color: colors.textMuted,
     marginTop: 2,
   },
-  headerActions: {
-    flexDirection: "row",
+  filterButton: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: colors.surface,
+    borderWidth: 1,
+    borderColor: colors.border,
+    justifyContent: "center",
     alignItems: "center",
     marginLeft: spacing.md,
-  },
-  iconButton: {
-    padding: spacing.sm,
-    borderRadius: 999,
-    marginLeft: spacing.xs,
   },
   listContent: {
     paddingHorizontal: spacing.lg,
     paddingVertical: spacing.md,
-    paddingBottom: spacing.xl * 2,
+    paddingBottom: spacing.xl * 3,
   },
   card: {
     backgroundColor: colors.surface,
@@ -210,7 +198,6 @@ const styles = StyleSheet.create({
     marginBottom: spacing.md,
     borderWidth: 1,
     borderColor: colors.border,
-    // petite ombre douce
     shadowColor: "#000",
     shadowOpacity: 0.05,
     shadowOffset: { width: 0, height: 2 },
@@ -256,16 +243,19 @@ const styles = StyleSheet.create({
     color: colors.text,
   },
   emptyContainer: {
-    marginTop: spacing.xl,
+    marginTop: spacing.xl * 2,
     alignItems: "center",
+    paddingHorizontal: spacing.lg,
   },
   emptyText: {
-    ...typography.body,
+    ...typography.title,
+    fontSize: 18,
     color: colors.text,
-    marginBottom: 2,
+    marginBottom: spacing.xs,
   },
   emptySubText: {
     ...typography.body,
     color: colors.textMuted,
+    textAlign: "center",
   },
 });

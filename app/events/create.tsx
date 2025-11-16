@@ -18,11 +18,12 @@ import {
 import DateTimePickerModal from "react-native-modal-datetime-picker";
 
 import { api } from "../../src/api/client";
+import { BottomNav } from "../../src/components/BottomNav";
 import { PrimaryButton } from "../../src/components/PrimaryButton";
 import { colors, radius, spacing, typography } from "../../src/styles/theme";
 
 const GOOGLE_MAPS_API_KEY =
-    (Constants.expoConfig?.extra as any)?.placesApiKey
+  (Constants.expoConfig?.extra as any)?.placesApiKey;
 
 type PlacePrediction = {
   place_id: string;
@@ -36,7 +37,6 @@ export default function CreateEventScreen() {
   const [type, setType] = useState("soirée");
   const [description, setDescription] = useState("");
 
-  // Date/heure via modal picker
   const [date, setDate] = useState<Date | null>(null);
   const [isDateModalVisible, setDateModalVisible] = useState(false);
 
@@ -149,7 +149,7 @@ export default function CreateEventScreen() {
     if (!address || latitude == null || longitude == null) {
       Alert.alert(
         "Lieu manquant",
-        "Choisis une adresse dans les suggestions pour localiser l’événement."
+        "Choisis une adresse dans les suggestions pour localiser l'événement."
       );
       return;
     }
@@ -170,7 +170,7 @@ export default function CreateEventScreen() {
 
       Alert.alert("Événement créé", "Ton événement est en ligne 🎉", [
         {
-          text: "Voir l’événement",
+          text: "Voir l'événement",
           onPress: () =>
             router.replace({
               pathname: "/events/[id]",
@@ -183,7 +183,7 @@ export default function CreateEventScreen() {
       Alert.alert(
         "Erreur",
         err?.response?.data?.message ||
-          "Impossible de créer l’événement pour le moment."
+          "Impossible de créer l'événement pour le moment."
       );
     } finally {
       setLoading(false);
@@ -202,15 +202,9 @@ export default function CreateEventScreen() {
           keyboardShouldPersistTaps="handled"
         >
           {/* HEADER */}
-          <View style={styles.headerBar}>
-            <Ionicons
-              name="chevron-back"
-              size={26}
-              color={colors.text}
-              onPress={() => router.back()}
-            />
-            <Text style={styles.headerTitle}>Créer un événement</Text>
-            <View style={{ width: 26 }} />
+          <View style={styles.header}>
+            <Text style={styles.logo}>Loners</Text>
+            <Text style={styles.subtitle}>Créer un événement</Text>
           </View>
 
           {/* FORM */}
@@ -229,7 +223,7 @@ export default function CreateEventScreen() {
             </Text>
             <View style={styles.typeRow}>
               {["soirée", "expo", "concert", "autre"].map((t) => (
-                <Text
+                <TouchableOpacity
                   key={t}
                   style={[
                     styles.typeChip,
@@ -237,8 +231,15 @@ export default function CreateEventScreen() {
                   ]}
                   onPress={() => setType(t)}
                 >
-                  {t}
-                </Text>
+                  <Text
+                    style={[
+                      styles.typeChipText,
+                      type === t && styles.typeChipTextActive,
+                    ]}
+                  >
+                    {t}
+                  </Text>
+                </TouchableOpacity>
               ))}
             </View>
 
@@ -247,7 +248,7 @@ export default function CreateEventScreen() {
               Date & heure *
             </Text>
             <Text style={styles.helperText}>
-              Choisis la date et l’heure de l’événement.
+              Choisis la date et l'heure de l'événement.
             </Text>
 
             <TouchableOpacity
@@ -336,30 +337,39 @@ export default function CreateEventScreen() {
             <TextInput
               value={description}
               onChangeText={setDescription}
-              placeholder="Explique l’ambiance, le lieu, le style..."
+              placeholder="Explique l'ambiance, le lieu, le style..."
               placeholderTextColor={colors.textMuted}
               style={[styles.input, styles.textArea]}
               multiline
             />
 
             {latitude != null && longitude != null && (
-              <Text style={styles.coordsText}>
-                Coordonnées sélectionnées : lat {latitude.toFixed(5)} / lon{" "}
-                {longitude.toFixed(5)}
-              </Text>
+              <View style={styles.coordsBox}>
+                <Ionicons
+                  name="checkmark-circle"
+                  size={16}
+                  color={colors.primary}
+                  style={{ marginRight: 6 }}
+                />
+                <Text style={styles.coordsText}>
+                  Lieu confirmé : {latitude.toFixed(5)}, {longitude.toFixed(5)}
+                </Text>
+              </View>
             )}
           </View>
 
           {/* SUBMIT */}
           <View style={{ marginTop: spacing.lg, marginBottom: spacing.xl }}>
             <PrimaryButton
-              title={loading ? "Création..." : "Créer l’événement"}
+              title={loading ? "Création..." : "Créer l'événement"}
               onPress={handleCreate}
               loading={loading}
             />
           </View>
         </ScrollView>
       </KeyboardAvoidingView>
+
+      <BottomNav />
     </View>
   );
 }
@@ -371,20 +381,21 @@ const styles = StyleSheet.create({
   },
   scrollContent: {
     paddingHorizontal: spacing.lg,
-    paddingTop: spacing.lg,
-    paddingBottom: spacing.xl * 2,
+    paddingTop: spacing.xl,
+    paddingBottom: spacing.xl * 3,
   },
-  headerBar: {
-    flexDirection: "row",
-    alignItems: "center",
+  header: {
     marginBottom: spacing.lg,
   },
-  headerTitle: {
+  logo: {
     ...typography.title,
-    fontSize: 20,
     color: colors.text,
-    marginLeft: spacing.sm,
-    flex: 1,
+    fontSize: 26,
+  },
+  subtitle: {
+    ...typography.body,
+    color: colors.textMuted,
+    marginTop: spacing.xs,
   },
   card: {
     backgroundColor: colors.surface,
@@ -425,23 +436,28 @@ const styles = StyleSheet.create({
   typeRow: {
     flexDirection: "row",
     flexWrap: "wrap",
+    gap: spacing.sm,
   },
   typeChip: {
-    ...typography.body,
-    fontSize: 13,
-    color: colors.textMuted,
-    paddingHorizontal: spacing.sm,
-    paddingVertical: 4,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
     borderRadius: 999,
     borderWidth: 1,
     borderColor: colors.border,
-    marginRight: spacing.sm,
-    marginBottom: spacing.sm,
+    backgroundColor: colors.surfaceAlt,
   },
   typeChipActive: {
     borderColor: colors.primary,
-    backgroundColor: colors.surfaceAlt,
-    color: colors.primary,
+    backgroundColor: colors.primary,
+  },
+  typeChipText: {
+    ...typography.body,
+    fontSize: 13,
+    color: colors.textMuted,
+  },
+  typeChipTextActive: {
+    color: "#FFF",
+    fontWeight: "600",
   },
   dateButton: {
     marginTop: spacing.xs,
@@ -495,10 +511,18 @@ const styles = StyleSheet.create({
     color: colors.text,
     flex: 1,
   },
+  coordsBox: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginTop: spacing.md,
+    paddingHorizontal: spacing.sm,
+    paddingVertical: spacing.xs,
+    backgroundColor: colors.surfaceAlt,
+    borderRadius: radius.md,
+  },
   coordsText: {
     ...typography.body,
     fontSize: 12,
-    color: colors.textMuted,
-    marginTop: spacing.sm,
+    color: colors.primary,
   },
 });
