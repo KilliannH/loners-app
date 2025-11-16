@@ -296,7 +296,7 @@ const styles = StyleSheet.create({
   scrollContent: {
     paddingHorizontal: spacing.lg,
     paddingTop: spacing.xl,
-    paddingBottom: spacing.xl * 3,
+    paddingBottom: 100,
   },
   loadingRoot: {
     flex: 1,

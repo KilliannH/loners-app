@@ -55,7 +55,7 @@ export const BottomNav: React.FC = () => {
       style={[
         styles.container,
         {
-          paddingBottom: Platform.OS === "ios" ? insets.bottom : spacing.sm,
+          paddingBottom: Math.max(Platform.OS === "ios" ? insets.bottom : spacing.sm, 64),
         },
       ]}
     >
@@ -106,10 +106,12 @@ const styles = StyleSheet.create({
     paddingTop: spacing.sm,
     paddingHorizontal: spacing.md,
     shadowColor: "#000",
-    shadowOpacity: 0.05,
-    shadowOffset: { width: 0, height: -2 },
-    shadowRadius: 8,
-    elevation: 8,
+    shadowOpacity: 0.1,
+    shadowOffset: { width: 0, height: -4 },
+    shadowRadius: 12,
+    elevation: 16,
+    zIndex: 1000,
+    position: "relative",
   },
   item: {
     flex: 1,

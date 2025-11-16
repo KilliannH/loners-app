@@ -377,7 +377,7 @@ const styles = StyleSheet.create({
   listContent: {
     paddingHorizontal: spacing.lg,
     paddingVertical: spacing.md,
-    paddingBottom: spacing.lg,
+    paddingBottom: 120,
   },
   bubbleRow: {
     flexDirection: "row",

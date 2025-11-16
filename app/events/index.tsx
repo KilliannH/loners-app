@@ -189,7 +189,7 @@ const styles = StyleSheet.create({
   listContent: {
     paddingHorizontal: spacing.lg,
     paddingVertical: spacing.md,
-    paddingBottom: spacing.xl * 3,
+    paddingBottom: 120,
   },
   card: {
     backgroundColor: colors.surface,

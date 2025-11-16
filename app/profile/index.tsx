@@ -169,7 +169,7 @@ const styles = StyleSheet.create({
   content: {
     paddingHorizontal: spacing.lg,
     paddingTop: spacing.xl,
-    paddingBottom: spacing.xl * 2,
+    paddingBottom: 120,
   },
   header: {
     marginBottom: spacing.xl,
