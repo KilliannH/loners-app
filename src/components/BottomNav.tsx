@@ -30,6 +30,13 @@ const NAV_ITEMS: NavItem[] = [
     label: "Créer",
   },
   {
+    name: "chats",
+    icon: "chatbubbles-outline",
+    iconActive: "chatbubbles",
+    route: "/chats",
+    label: "Chats",
+  },
+  {
     name: "profile",
     icon: "person-outline",
     iconActive: "person",
@@ -50,12 +57,17 @@ export const BottomNav: React.FC = () => {
     return pathname.startsWith(route);
   };
 
+  // Sur Android, on force un minimum de padding pour éviter les boutons système
+  const bottomPadding = Platform.OS === "android" 
+    ? Math.max(insets.bottom, 24) 
+    : Math.max(insets.bottom, 16);
+
   return (
     <View
       style={[
         styles.container,
         {
-          paddingBottom: Math.max(Platform.OS === "ios" ? insets.bottom : spacing.sm, 64),
+          paddingBottom: bottomPadding,
         },
       ]}
     >
@@ -103,13 +115,13 @@ const styles = StyleSheet.create({
     backgroundColor: colors.surface,
     borderTopWidth: 1,
     borderTopColor: colors.border,
-    paddingTop: spacing.sm,
+    paddingTop: spacing.md,
     paddingHorizontal: spacing.md,
     shadowColor: "#000",
-    shadowOpacity: 0.1,
+    shadowOpacity: 0.15,
     shadowOffset: { width: 0, height: -4 },
     shadowRadius: 12,
-    elevation: 16,
+    elevation: 20,
     zIndex: 1000,
     position: "relative",
   },

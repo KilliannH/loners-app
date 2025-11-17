@@ -39,6 +39,7 @@ function RootLayoutInner() {
         <Stack.Screen name="events/[id]" />
         <Stack.Screen name="events/[id]/chat" />
         <Stack.Screen name="events/create" />
+        <Stack.Screen name="chats/index" />
         <Stack.Screen name="profile/index" />
       </Stack>
     </>

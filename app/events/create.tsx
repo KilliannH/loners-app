@@ -4,16 +4,16 @@ import Constants from "expo-constants";
 import { useRouter } from "expo-router";
 import React, { useState } from "react";
 import {
-    ActivityIndicator,
-    Alert,
-    KeyboardAvoidingView,
-    Platform,
-    ScrollView,
-    StyleSheet,
-    Text,
-    TextInput,
-    TouchableOpacity,
-    View,
+  ActivityIndicator,
+  Alert,
+  KeyboardAvoidingView,
+  Platform,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
 } from "react-native";
 import DateTimePickerModal from "react-native-modal-datetime-picker";
 
@@ -72,20 +72,29 @@ export default function CreateEventScreen() {
     try {
       setLoadingSuggestions(true);
       const encoded = encodeURIComponent(query.trim());
-      const url = `https://maps.googleapis.com/maps/api/place/autocomplete/json?input=${encoded}&key=${GOOGLE_MAPS_API_KEY}&types=geocode&language=fr`;
+      
+      // Utilisation de Geocoding API au lieu de Places Autocomplete
+      // Plus simple et trouve plus d'adresses
+      const url = `https://maps.googleapis.com/maps/api/geocode/json?address=${encoded}&language=fr&key=${GOOGLE_MAPS_API_KEY}`;
 
       const res = await fetch(url);
       const data = await res.json();
 
-      if (data.status !== "OK") {
-        console.log("Places autocomplete error:", data);
+      if (data.status !== "OK" && data.status !== "ZERO_RESULTS") {
+        console.log("Geocoding error:", data);
         setSuggestions([]);
         return;
       }
 
-      setSuggestions(data.predictions || []);
+      // Transformer les résultats au bon format
+      const predictions = data.results?.map((result: any) => ({
+        place_id: result.place_id,
+        description: result.formatted_address,
+      })) || [];
+
+      setSuggestions(predictions);
     } catch (err: any) {
-      console.log("Places autocomplete fetch error:", err?.message || err);
+      console.log("Geocoding fetch error:", err?.message || err);
       setSuggestions([]);
     } finally {
       setLoadingSuggestions(false);
@@ -106,30 +115,31 @@ export default function CreateEventScreen() {
       setAddress(prediction.description);
       setSuggestions([]);
 
-      const url = `https://maps.googleapis.com/maps/api/place/details/json?place_id=${prediction.place_id}&fields=geometry/location,formatted_address&key=${GOOGLE_MAPS_API_KEY}`;
+      // Utiliser Geocoding API pour récupérer les coordonnées
+      const encoded = encodeURIComponent(prediction.description);
+      const url = `https://maps.googleapis.com/maps/api/geocode/json?address=${encoded}&key=${GOOGLE_MAPS_API_KEY}`;
 
       const res = await fetch(url);
       const data = await res.json();
 
-      if (data.status !== "OK") {
-        console.log("Place details error:", data);
+      if (data.status !== "OK" || !data.results || data.results.length === 0) {
+        console.log("Geocoding error:", data);
         Alert.alert(
           "Erreur",
-          "Impossible de récupérer les détails de ce lieu."
+          "Impossible de récupérer les coordonnées de ce lieu."
         );
         return;
       }
 
-      const loc = data.result.geometry.location;
+      const result = data.results[0];
+      const loc = result.geometry.location;
+      
       setLatitude(loc.lat);
       setLongitude(loc.lng);
-
-      if (data.result.formatted_address) {
-        setAddress(data.result.formatted_address);
-        setAddressQuery(data.result.formatted_address);
-      }
+      setAddress(result.formatted_address);
+      setAddressQuery(result.formatted_address);
     } catch (err: any) {
-      console.log("Place details fetch error:", err?.message || err);
+      console.log("Geocoding fetch error:", err?.message || err);
       Alert.alert(
         "Erreur",
         "Impossible de récupérer les coordonnées de ce lieu."
