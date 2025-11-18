@@ -16,6 +16,7 @@ import { io, Socket } from "socket.io-client";
 
 import { api } from "../../../src/api/client";
 import { useAuth } from "../../../src/context/AuthContext";
+import { useUnread } from "../../../src/context/UnreadContext";
 import { colors, radius, spacing, typography } from "../../../src/styles/theme";
 import type { ChatMessage } from "../../../src/types/api";
 
@@ -98,6 +99,7 @@ export default function EventChatScreen() {
   const eventId = Number(id);
   const router = useRouter();
   const { user } = useAuth();
+  const { markAsRead, incrementUnread } = useUnread();
 
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [loading, setLoading] = useState(true);
@@ -107,6 +109,13 @@ export default function EventChatScreen() {
 
   const socketRef = useRef<Socket | null>(null);
   const listRef = useRef<FlatList<ChatMessage>>(null);
+
+  // Marquer comme lu quand on entre dans le chat
+  useEffect(() => {
+    if (!Number.isNaN(eventId)) {
+      markAsRead(eventId);
+    }
+  }, [eventId]);
 
   const scrollToBottom = () => {
     setTimeout(() => {
@@ -148,7 +157,10 @@ export default function EventChatScreen() {
       socket.on("new_message", (message: ChatMessage) => {
         if (message.eventId === eventId) {
           setMessages((prev) => [...prev, message]);
+          // Marquer comme lu immédiatement puisqu'on est dans le chat
+          markAsRead(eventId);
         }
+        // Plus besoin d'incrémenter ici, c'est géré globalement dans UnreadContext
       });
 
       socket.on("join_denied", (payload) => {

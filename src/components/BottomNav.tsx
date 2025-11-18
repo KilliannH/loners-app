@@ -4,6 +4,7 @@ import { usePathname, useRouter } from "expo-router";
 import React from "react";
 import { Platform, Pressable, StyleSheet, Text, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { useUnread } from "../context/UnreadContext";
 import { colors, spacing, typography } from "../styles/theme";
 
 type NavItem = {
@@ -49,6 +50,7 @@ export const BottomNav: React.FC = () => {
   const router = useRouter();
   const pathname = usePathname();
   const insets = useSafeAreaInsets();
+  const { totalUnread } = useUnread();
 
   const getIsActive = (route: string) => {
     if (route === "/events") {
@@ -57,8 +59,6 @@ export const BottomNav: React.FC = () => {
     return pathname.startsWith(route);
   };
 
-  // Sur Android, on force un minimum de padding pour éviter les boutons système
-  // Mais on limite aussi pour éviter un padding trop grand sur certains appareils
   const bottomPadding = Platform.OS === "android" 
     ? Math.min(Math.max(insets.bottom, 8), 24) 
     : Math.max(insets.bottom, 16);
@@ -74,6 +74,8 @@ export const BottomNav: React.FC = () => {
     >
       {NAV_ITEMS.map((item) => {
         const isActive = getIsActive(item.route);
+        const showBadge = item.name === "chats" && totalUnread > 0;
+
         return (
           <Pressable
             key={item.name}
@@ -94,6 +96,13 @@ export const BottomNav: React.FC = () => {
                 size={24}
                 color={isActive ? colors.primary : colors.textMuted}
               />
+              {showBadge && (
+                <View style={styles.badge}>
+                  <Text style={styles.badgeText}>
+                    {totalUnread > 99 ? "99+" : totalUnread}
+                  </Text>
+                </View>
+              )}
             </View>
             <Text
               style={[
@@ -141,9 +150,29 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     marginBottom: 2,
+    position: "relative",
   },
   iconWrapperActive: {
     backgroundColor: colors.surfaceAlt,
+  },
+  badge: {
+    position: "absolute",
+    top: -2,
+    right: -2,
+    backgroundColor: colors.danger,
+    borderRadius: 10,
+    minWidth: 20,
+    height: 20,
+    paddingHorizontal: 5,
+    justifyContent: "center",
+    alignItems: "center",
+    borderWidth: 2,
+    borderColor: colors.surface,
+  },
+  badgeText: {
+    color: "#FFF",
+    fontSize: 11,
+    fontWeight: "700",
   },
   label: {
     ...typography.body,

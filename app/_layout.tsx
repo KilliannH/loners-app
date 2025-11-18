@@ -5,6 +5,7 @@ import React from "react";
 import { ActivityIndicator, View } from "react-native";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 import { AuthProvider, useAuth } from "../src/context/AuthContext";
+import { UnreadProvider } from "../src/context/UnreadContext";
 
 function RootLayoutInner() {
   const { loading } = useAuth();
@@ -50,7 +51,9 @@ export default function RootLayout() {
   return (
     <SafeAreaProvider>
       <AuthProvider>
-        <RootLayoutInner />
+        <UnreadProvider>
+          <RootLayoutInner />
+        </UnreadProvider>
       </AuthProvider>
     </SafeAreaProvider>
   );

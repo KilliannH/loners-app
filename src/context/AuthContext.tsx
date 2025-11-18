@@ -1,6 +1,7 @@
 // src/context/AuthContext.tsx
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import React, { createContext, useContext, useEffect, useState } from "react";
+import { io, Socket } from "socket.io-client";
 import { api, clearTokens, loadTokens, saveTokens } from "../api/client";
 import { useNotifications } from "../hooks/useNotifications";
 import type { AuthResponse, User } from "../types/api";
@@ -8,6 +9,7 @@ import type { AuthResponse, User } from "../types/api";
 type AuthContextValue = {
   user: User | null;
   loading: boolean;
+  socket: Socket | null;
   signIn: (email: string, password: string) => Promise<void>;
   signUp: (email: string, username: string, password: string) => Promise<void>;
   signOut: () => Promise<void>;
@@ -20,9 +22,54 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
 }) => {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
+  const [socket, setSocket] = useState<Socket | null>(null);
 
   // Setup des notifications push
   useNotifications(!!user);
+
+  // Setup du socket global
+  useEffect(() => {
+    if (!user) {
+      // Déconnecter le socket si pas d'utilisateur
+      if (socket) {
+        socket.disconnect();
+        setSocket(null);
+      }
+      return;
+    }
+
+    // Créer une connexion socket globale
+    const setupGlobalSocket = async () => {
+      try {
+        const baseURL = api.defaults.baseURL;
+        const token = await AsyncStorage.getItem("accessToken");
+
+        const newSocket = io(baseURL, {
+          auth: { token },
+        });
+
+        newSocket.on("connect", () => {
+          console.log("Global socket connected");
+        });
+
+        newSocket.on("disconnect", () => {
+          console.log("Global socket disconnected");
+        });
+
+        setSocket(newSocket);
+      } catch (err) {
+        console.log("Error setting up global socket:", err);
+      }
+    };
+
+    setupGlobalSocket();
+
+    return () => {
+      if (socket) {
+        socket.disconnect();
+      }
+    };
+  }, [user]);
 
   // au démarrage : on tente de charger l'user
   useEffect(() => {
@@ -86,6 +133,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
       value={{
         user,
         loading,
+        socket,
         signIn,
         signUp,
         signOut,

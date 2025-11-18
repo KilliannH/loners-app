@@ -55,9 +55,6 @@ module.exports = {
         {
           "icon": "./assets/notification-icon.png",
           "color": "#6366F1",
-          "sounds": [
-            "./assets/notification-sound.wav"
-          ]
         }
       ]
     ],
@@ -68,7 +65,7 @@ module.exports = {
     extra: {
       "router": {},
       "eas": {
-        "projectId": process.env.EXPO_PUBLIC_EAS_PROJECT_ID
+        "projectId": "5f0ae73f-2e06-4025-88af-b2372f86efe7"
       },
       "placesApiKey": process.env.EXPO_PUBLIC_PLACES_API_KEY
     },

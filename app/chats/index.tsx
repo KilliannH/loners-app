@@ -3,16 +3,17 @@ import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import React, { useEffect, useState } from "react";
 import {
-    FlatList,
-    RefreshControl,
-    StyleSheet,
-    Text,
-    TouchableOpacity,
-    View
+  FlatList,
+  RefreshControl,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
 } from "react-native";
 import { api } from "../../src/api/client";
 import { BottomNav } from "../../src/components/BottomNav";
 import { useAuth } from "../../src/context/AuthContext";
+import { useUnread } from "../../src/context/UnreadContext";
 import { colors, radius, spacing, typography } from "../../src/styles/theme";
 import type { EventWithDetails } from "../../src/types/api";
 
@@ -20,14 +21,15 @@ export default function ChatsListScreen() {
   const [events, setEvents] = useState<EventWithDetails[]>([]);
   const [loading, setLoading] = useState(false);
   const { user } = useAuth();
+  const { unreadCounts, fetchUnreadCounts } = useUnread();
   const router = useRouter();
 
   const fetchMyEvents = async () => {
     try {
       setLoading(true);
-      // Route backend qui retourne les événements où l'utilisateur participe
       const res = await api.get<EventWithDetails[]>("/events/my-participations");
       setEvents(res.data);
+      await fetchUnreadCounts();
     } catch (err) {
       console.log("Error fetching my events", err);
     } finally {
@@ -39,15 +41,9 @@ export default function ChatsListScreen() {
     fetchMyEvents();
   }, []);
 
-  const getInitials = (username: string) => {
-    if (!username) return "?";
-    const parts = username.trim().split(" ");
-    if (parts.length === 1) return parts[0].charAt(0).toUpperCase();
-    return (parts[0].charAt(0) + parts[1].charAt(0)).toUpperCase();
-  };
-
   const renderItem = ({ item }: { item: EventWithDetails }) => {
     const participantsCount = item.participants?.length ?? 0;
+    const unreadCount = unreadCounts[item.id] || 0;
     const dateStr = new Date(item.date).toLocaleDateString("fr-FR", {
       day: "numeric",
       month: "short",
@@ -65,11 +61,24 @@ export default function ChatsListScreen() {
       >
         <View style={styles.chatAvatar}>
           <Ionicons name="people" size={24} color={colors.primary} />
+          {unreadCount > 0 && (
+            <View style={styles.avatarBadge}>
+              <Text style={styles.avatarBadgeText}>
+                {unreadCount > 9 ? "9+" : unreadCount}
+              </Text>
+            </View>
+          )}
         </View>
 
         <View style={styles.chatContent}>
           <View style={styles.chatHeader}>
-            <Text style={styles.chatTitle} numberOfLines={1}>
+            <Text
+              style={[
+                styles.chatTitle,
+                unreadCount > 0 && styles.chatTitleUnread,
+              ]}
+              numberOfLines={1}
+            >
               {item.title}
             </Text>
             <Text style={styles.chatDate}>{dateStr}</Text>
@@ -87,17 +96,14 @@ export default function ChatsListScreen() {
                 style={{ marginRight: 4 }}
               />
               <Text style={styles.participantsText}>
-                {participantsCount} {participantsCount > 1 ? "participants" : "participant"}
+                {participantsCount}{" "}
+                {participantsCount > 1 ? "participants" : "participant"}
               </Text>
             </View>
           </View>
         </View>
 
-        <Ionicons
-          name="chevron-forward"
-          size={20}
-          color={colors.textMuted}
-        />
+        <Ionicons name="chevron-forward" size={20} color={colors.textMuted} />
       </TouchableOpacity>
     );
   };
@@ -110,7 +116,8 @@ export default function ChatsListScreen() {
           <Text style={styles.logo}>Loners</Text>
           <Text style={styles.subtitle}>Mes conversations</Text>
           <Text style={styles.subtitleMuted}>
-            {events.length} {events.length > 1 ? "événements" : "événement"} en cours
+            {events.length} {events.length > 1 ? "événements" : "événement"} en
+            cours
           </Text>
         </View>
       </View>
@@ -204,6 +211,26 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
     marginRight: spacing.md,
+    position: "relative",
+  },
+  avatarBadge: {
+    position: "absolute",
+    top: -4,
+    right: -4,
+    backgroundColor: colors.danger,
+    borderRadius: 10,
+    minWidth: 20,
+    height: 20,
+    paddingHorizontal: 4,
+    justifyContent: "center",
+    alignItems: "center",
+    borderWidth: 2,
+    borderColor: colors.surface,
+  },
+  avatarBadgeText: {
+    color: "#FFF",
+    fontSize: 11,
+    fontWeight: "700",
   },
   chatContent: {
     flex: 1,
@@ -220,6 +247,10 @@ const styles = StyleSheet.create({
     color: colors.text,
     flex: 1,
     marginRight: spacing.sm,
+  },
+  chatTitleUnread: {
+    fontWeight: "700",
+    color: colors.text,
   },
   chatDate: {
     ...typography.body,
