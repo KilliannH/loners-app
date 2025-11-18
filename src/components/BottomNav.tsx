@@ -58,8 +58,9 @@ export const BottomNav: React.FC = () => {
   };
 
   // Sur Android, on force un minimum de padding pour éviter les boutons système
+  // Mais on limite aussi pour éviter un padding trop grand sur certains appareils
   const bottomPadding = Platform.OS === "android" 
-    ? Math.max(insets.bottom, 24) 
+    ? Math.min(Math.max(insets.bottom, 8), 24) 
     : Math.max(insets.bottom, 16);
 
   return (
@@ -115,7 +116,7 @@ const styles = StyleSheet.create({
     backgroundColor: colors.surface,
     borderTopWidth: 1,
     borderTopColor: colors.border,
-    paddingTop: spacing.md,
+    paddingTop: spacing.sm,
     paddingHorizontal: spacing.md,
     shadowColor: "#000",
     shadowOpacity: 0.15,

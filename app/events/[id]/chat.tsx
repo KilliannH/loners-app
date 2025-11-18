@@ -4,21 +4,17 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import React, { useEffect, useRef, useState } from "react";
 import {
-    ActivityIndicator,
-    FlatList,
-    KeyboardAvoidingView,
-    Platform,
-    StyleSheet,
-    Text,
-    TextInput,
-    TouchableOpacity,
-    View,
+  ActivityIndicator,
+  FlatList,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View
 } from "react-native";
-import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { io, Socket } from "socket.io-client";
 
 import { api } from "../../../src/api/client";
-import { BottomNav } from "../../../src/components/BottomNav";
 import { useAuth } from "../../../src/context/AuthContext";
 import { colors, radius, spacing, typography } from "../../../src/styles/theme";
 import type { ChatMessage } from "../../../src/types/api";
@@ -98,7 +94,6 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({ message, isOwn }) => {
 };
 
 export default function EventChatScreen() {
-  const insets = useSafeAreaInsets();
   const { id, title } = useLocalSearchParams<Params>();
   const eventId = Number(id);
   const router = useRouter();
@@ -114,9 +109,11 @@ export default function EventChatScreen() {
   const listRef = useRef<FlatList<ChatMessage>>(null);
 
   const scrollToBottom = () => {
-    if (listRef.current && messages.length > 0) {
-      listRef.current.scrollToEnd({ animated: true });
-    }
+    setTimeout(() => {
+      if (listRef.current && messages.length > 0) {
+        listRef.current.scrollToEnd({ animated: true });
+      }
+    }, 100);
   };
 
   const loadHistory = async () => {
@@ -187,7 +184,7 @@ export default function EventChatScreen() {
   }, [eventId]);
 
   useEffect(() => {
-    if (!loading) {
+    if (!loading && messages.length > 0) {
       scrollToBottom();
     }
   }, [loading, messages.length]);
@@ -195,11 +192,10 @@ export default function EventChatScreen() {
   const handleSend = () => {
     if (!input.trim() || !socketRef.current || !socketConnected) return;
 
-    setSending(true);
     const text = input.trim();
     socketRef.current.emit("send_message", { eventId, text });
     setInput("");
-    setSending(false);
+    scrollToBottom();
   };
 
   if (loading) {
@@ -215,97 +211,87 @@ export default function EventChatScreen() {
 
   return (
     <View style={styles.root}>
-      <KeyboardAvoidingView
-        style={{ flex: 1 }}
-        behavior={Platform.OS === "ios" ? "padding" : undefined}
-        keyboardVerticalOffset={Platform.OS === "ios" ? 90 : 0}
-      >
-        {/* HEADER */}
-        <View style={styles.headerBar}>
-          <TouchableOpacity
-            onPress={() => router.back()}
-            style={styles.backButton}
-          >
-            <Ionicons name="chevron-back" size={26} color={colors.text} />
-          </TouchableOpacity>
+      {/* HEADER */}
+      <View style={styles.headerBar}>
+        <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
+          <Ionicons name="chevron-back" size={26} color={colors.text} />
+        </TouchableOpacity>
 
-          <View style={styles.headerCenter}>
-            <Text numberOfLines={1} style={styles.headerTitle}>
-              {headerTitle}
+        <View style={styles.headerCenter}>
+          <Text numberOfLines={1} style={styles.headerTitle}>
+            {headerTitle}
+          </Text>
+          <View style={styles.headerStatusRow}>
+            <View
+              style={[
+                styles.statusDot,
+                {
+                  backgroundColor: socketConnected
+                    ? colors.primary
+                    : colors.textMuted,
+                },
+              ]}
+            />
+            <Text style={styles.statusText}>
+              {socketConnected ? "Connecté" : "Hors ligne"}
             </Text>
-            <View style={styles.headerStatusRow}>
-              <View
-                style={[
-                  styles.statusDot,
-                  {
-                    backgroundColor: socketConnected
-                      ? colors.primary
-                      : colors.textMuted,
-                  },
-                ]}
-              />
-              <Text style={styles.statusText}>
-                {socketConnected ? "Connecté" : "Hors ligne"}
-              </Text>
-            </View>
           </View>
-
-          <View style={{ width: 32 }} />
         </View>
 
-        {/* LISTE DES MESSAGES */}
-        <FlatList
-          ref={listRef}
-          data={messages}
-          keyExtractor={(item) => item.id.toString()}
-          renderItem={({ item }) => (
-            <MessageBubble message={item} isOwn={item.sender.id === user?.id} />
-          )}
-          contentContainerStyle={styles.listContent}
-          onContentSizeChange={scrollToBottom}
+        <View style={{ width: 32 }} />
+      </View>
+
+      {/* LISTE DES MESSAGES */}
+      <FlatList
+        ref={listRef}
+        data={messages}
+        keyExtractor={(item) => item.id.toString()}
+        renderItem={({ item }) => (
+          <MessageBubble message={item} isOwn={item.sender.id === user?.id} />
+        )}
+        contentContainerStyle={styles.listContent}
+        keyboardShouldPersistTaps="handled"
+        onContentSizeChange={scrollToBottom}
+        ListEmptyComponent={
+          <View style={styles.emptyContainer}>
+            <Ionicons
+              name="chatbubble-ellipses-outline"
+              size={48}
+              color={colors.textMuted}
+              style={{ marginBottom: 12 }}
+            />
+            <Text style={styles.emptyText}>Aucun message pour le moment</Text>
+            <Text style={styles.emptySubText}>
+              Soit le premier à briser la glace ! 👋
+            </Text>
+          </View>
+        }
+      />
+
+      {/* BARRE D'INPUT */}
+      <View style={styles.inputBar}>
+        <TextInput
+          style={styles.input}
+          value={input}
+          onChangeText={setInput}
+          placeholder="Écrire un message..."
+          placeholderTextColor={colors.textMuted}
+          multiline
+          maxLength={500}
+          onSubmitEditing={handleSend}
+          blurOnSubmit={false}
         />
-
-        {/* BARRE D'INPUT */}
-        <View
+        <TouchableOpacity
+          onPress={handleSend}
           style={[
-            styles.inputBar,
-            {
-              paddingBottom:spacing.sm,
-            },
+            styles.sendButton,
+            (!input.trim() || !socketConnected) && styles.sendButtonDisabled,
           ]}
+          disabled={!input.trim() || !socketConnected || sending}
         >
-          <TextInput
-            style={styles.input}
-            value={input}
-            onChangeText={setInput}
-            placeholder="Écrire un message..."
-            placeholderTextColor={colors.textMuted}
-            multiline
-          />
-          <TouchableOpacity
-            onPress={handleSend}
-            style={[
-              styles.sendButton,
-              (!input.trim() || !socketConnected) &&
-                styles.sendButtonDisabled,
-            ]}
-            disabled={!input.trim() || !socketConnected || sending}
-          >
-            {sending ? (
-              <ActivityIndicator size="small" color="#FFF" />
-            ) : (
-              <Ionicons
-                name="send"
-                size={18}
-                color="#FFF"
-                style={{ marginLeft: 1 }}
-              />
-            )}
-          </TouchableOpacity>
-        </View>
-      </KeyboardAvoidingView>
-
-      <BottomNav />
+          <Ionicons name="send" size={18} color="#FFF" />
+        </TouchableOpacity>
+      </View>
     </View>
   );
 }
@@ -331,7 +317,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     paddingHorizontal: spacing.lg,
     paddingTop: spacing.xl,
-    paddingBottom: spacing.sm,
+    paddingBottom: spacing.md,
     borderBottomWidth: 1,
     borderBottomColor: colors.border,
     backgroundColor: colors.surface,
@@ -375,13 +361,32 @@ const styles = StyleSheet.create({
   },
   listContent: {
     paddingHorizontal: spacing.lg,
-    paddingVertical: spacing.md,
-    paddingBottom: 120,
+    paddingTop: spacing.md,
+    paddingBottom: spacing.lg,
+    flexGrow: 1,
+  },
+  emptyContainer: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    paddingHorizontal: spacing.lg,
+    marginTop: spacing.xl * 3,
+  },
+  emptyText: {
+    ...typography.title,
+    fontSize: 18,
+    color: colors.text,
+    marginBottom: spacing.xs,
+  },
+  emptySubText: {
+    ...typography.body,
+    color: colors.textMuted,
+    textAlign: "center",
   },
   bubbleRow: {
     flexDirection: "row",
     alignItems: "flex-end",
-    marginBottom: spacing.sm,
+    marginBottom: spacing.md,
   },
   bubbleRowLeft: {
     justifyContent: "flex-start",
@@ -399,9 +404,9 @@ const styles = StyleSheet.create({
     alignSelf: "flex-end",
   },
   avatar: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
+    width: 36,
+    height: 36,
+    borderRadius: 18,
     backgroundColor: colors.primarySoft,
     justifyContent: "center",
     alignItems: "center",
@@ -409,14 +414,14 @@ const styles = StyleSheet.create({
   },
   avatarText: {
     ...typography.body,
-    fontSize: 13,
+    fontSize: 14,
     color: "#FFFFFF",
-    fontWeight: "600",
+    fontWeight: "700",
   },
   bubble: {
     borderRadius: radius.lg,
     paddingHorizontal: spacing.md,
-    paddingVertical: spacing.sm,
+    paddingVertical: spacing.sm + 2,
   },
   bubbleOwn: {
     backgroundColor: colors.primary,
@@ -428,6 +433,8 @@ const styles = StyleSheet.create({
   },
   bubbleText: {
     ...typography.body,
+    fontSize: 15,
+    lineHeight: 20,
   },
   bubbleTextOwn: {
     color: "#FFFFFF",
@@ -439,20 +446,21 @@ const styles = StyleSheet.create({
     ...typography.body,
     fontSize: 12,
     color: colors.textMuted,
-    marginBottom: 2,
+    marginBottom: 4,
+    fontWeight: "600",
   },
   bubbleTime: {
     ...typography.body,
     fontSize: 11,
     color: colors.textMuted,
-    marginTop: 2,
+    marginTop: 4,
     alignSelf: "flex-end",
   },
   inputBar: {
     flexDirection: "row",
     alignItems: "flex-end",
     paddingHorizontal: spacing.lg,
-    paddingTop: spacing.sm,
+    paddingVertical: spacing.md,
     borderTopWidth: 1,
     borderTopColor: colors.border,
     backgroundColor: colors.surface,
@@ -460,24 +468,28 @@ const styles = StyleSheet.create({
   input: {
     flex: 1,
     maxHeight: 100,
-    borderRadius: radius.lg,
+    minHeight: 44,
+    borderRadius: radius.xl,
     borderWidth: 1,
     borderColor: colors.border,
     paddingHorizontal: spacing.md,
-    paddingVertical: spacing.sm,
+    paddingVertical: spacing.sm + 2,
+    paddingTop: spacing.sm + 4,
     color: colors.text,
     backgroundColor: colors.surfaceAlt,
+    fontSize: 15,
   },
   sendButton: {
-    marginLeft: spacing.sm,
-    borderRadius: 999,
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.sm,
+    width: 44,
+    height: 44,
+    borderRadius: 22,
     backgroundColor: colors.primary,
     justifyContent: "center",
     alignItems: "center",
+    marginLeft: spacing.sm,
   },
   sendButtonDisabled: {
     backgroundColor: colors.textMuted,
+    opacity: 0.5,
   },
 });

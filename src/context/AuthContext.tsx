@@ -2,6 +2,7 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import React, { createContext, useContext, useEffect, useState } from "react";
 import { api, clearTokens, loadTokens, saveTokens } from "../api/client";
+import { useNotifications } from "../hooks/useNotifications";
 import type { AuthResponse, User } from "../types/api";
 
 type AuthContextValue = {
@@ -19,6 +20,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
 }) => {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
+
+  // Setup des notifications push
+  useNotifications(!!user);
 
   // au démarrage : on tente de charger l'user
   useEffect(() => {
@@ -68,6 +72,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
       if (refreshToken) {
         await api.post("/auth/logout", { refreshToken });
       }
+      // Supprimer le push token du backend
+      await api.delete("/push-token").catch(() => {});
     } catch {
       // pas grave
     }
