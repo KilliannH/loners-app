@@ -51,6 +51,7 @@ export const BottomNav: React.FC = () => {
   const pathname = usePathname();
   const insets = useSafeAreaInsets();
   const { totalUnread } = useUnread();
+  console.log("🔔 BottomNav: Total unread:", totalUnread);
 
   const getIsActive = (route: string) => {
     if (route === "/events") {
@@ -59,8 +60,8 @@ export const BottomNav: React.FC = () => {
     return pathname.startsWith(route);
   };
 
-  const bottomPadding = Platform.OS === "android" 
-    ? Math.min(Math.max(insets.bottom, 8), 24) 
+  const bottomPadding = Platform.OS === "android"
+    ? Math.min(Math.max(insets.bottom, 8), 24)
     : Math.max(insets.bottom, 16);
 
   return (
