@@ -5,6 +5,7 @@ import React from "react";
 import { ActivityIndicator, View } from "react-native";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 import { AuthProvider, useAuth } from "../src/context/AuthContext";
+import { ToastProvider } from "../src/context/ToastContext";
 import { UnreadProvider } from "../src/context/UnreadContext";
 
 function RootLayoutInner() {
@@ -52,7 +53,9 @@ export default function RootLayout() {
     <SafeAreaProvider>
       <AuthProvider>
         <UnreadProvider>
-          <RootLayoutInner />
+          <ToastProvider>
+            <RootLayoutInner />
+          </ToastProvider>
         </UnreadProvider>
       </AuthProvider>
     </SafeAreaProvider>

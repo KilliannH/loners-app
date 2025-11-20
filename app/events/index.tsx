@@ -1,16 +1,16 @@
 // app/events/index.tsx
+import { useToast } from "@/src/context/ToastContext";
 import { Ionicons } from "@expo/vector-icons";
 import * as Location from "expo-location";
 import { useRouter } from "expo-router";
 import React, { useEffect, useState } from "react";
 import {
-  Alert,
   FlatList,
   RefreshControl,
   StyleSheet,
   Text,
   TouchableOpacity,
-  View,
+  View
 } from "react-native";
 import { api } from "../../src/api/client";
 import { BottomNav } from "../../src/components/BottomNav";
@@ -28,16 +28,14 @@ export default function EventsListScreen() {
   const [locationPermission, setLocationPermission] = useState(false);
   const { user } = useAuth();
   const router = useRouter();
+  const toast = useToast();
 
   // Demander la permission de localisation
   const requestLocationPermission = async () => {
     try {
       const { status } = await Location.requestForegroundPermissionsAsync();
       if (status !== "granted") {
-        Alert.alert(
-          "Permission refusée",
-          "Loners a besoin de ta localisation pour te montrer les événements autour de toi."
-        );
+        toast.error("Loners a besoin de ta localisation pour te montrer les événements autour de toi.");
         return false;
       }
       setLocationPermission(true);
@@ -73,12 +71,7 @@ export default function EventsListScreen() {
         longitude: 2.3522,
       };
       
-      Alert.alert(
-        "Position par défaut",
-        "Impossible de récupérer ta position. Utilisation de Paris comme position par défaut. Configure la localisation dans ton émulateur.",
-        [{ text: "OK" }]
-      );
-      
+      toast.warning("Impossible de récupérer ta position. Utilisation de Paris comme position par défaut. Configure la localisation dans ton émulateur.");
       setUserLocation(defaultLocation);
       return defaultLocation;
     }
@@ -120,10 +113,7 @@ export default function EventsListScreen() {
       setEvents(res.data);
     } catch (err) {
       console.log("Error fetching events", err);
-      Alert.alert(
-        "Erreur",
-        "Impossible de charger les événements. Vérifie ta connexion."
-      );
+      toast.error("Impossible de charger les événements. Vérifie ta connexion.");
     } finally {
       setLoading(false);
     }

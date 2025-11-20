@@ -33,7 +33,6 @@ export const UnreadProvider: React.FC<{ children: React.ReactNode }> = ({
       // Récupérer aussi la liste des événements où je participe
       const eventIds = Object.keys(res.data).map(id => parseInt(id, 10));
       setMyEventIds(eventIds);
-      console.log("📋 My event IDs:", eventIds);
     } catch (err) {
       console.log("Error fetching unread counts:", err);
     }
@@ -48,15 +47,11 @@ export const UnreadProvider: React.FC<{ children: React.ReactNode }> = ({
   // Rejoindre toutes les rooms des événements où je participe
   useEffect(() => {
     if (!socket || myEventIds.length === 0) {
-      console.log("⚠️ Cannot join rooms - socket:", !!socket, "events:", myEventIds.length);
       return;
     }
-
-    console.log("🚪 Joining rooms for events:", myEventIds);
     
     // Rejoindre chaque room
     myEventIds.forEach(eventId => {
-      console.log(`🚪 Joining room for event ${eventId}`);
       socket.emit("join_event", eventId);
     });
 
@@ -77,26 +72,16 @@ export const UnreadProvider: React.FC<{ children: React.ReactNode }> = ({
 
   // Écouter les nouveaux messages via le socket global
   useEffect(() => {
-    console.log("🎧 UnreadContext: Socket status:", !!socket);
-    console.log("🎧 UnreadContext: Socket ID:", socket?.id);
     
     if (!socket) {
-      console.log("⚠️ UnreadContext: No socket available yet");
       return;
     }
 
-    console.log("🎧 UnreadContext: Setting up listener on socket", socket.id);
-
     const handleNewMessage = (message: ChatMessage) => {
-      console.log("📨 NEW MESSAGE RECEIVED GLOBALLY!");
-      console.log("📨 EventId:", message.eventId);
-      console.log("📨 Text:", message.text);
-      console.log("📨 Sender:", message.sender.username);
       
       // Incrémenter le compteur pour cet événement
       setUnreadCounts((prev) => {
         const newCount = (prev[message.eventId] || 0) + 1;
-        console.log(`📨 Incrementing badge for event ${message.eventId}: ${newCount}`);
         return {
           ...prev,
           [message.eventId]: newCount,
@@ -105,10 +90,8 @@ export const UnreadProvider: React.FC<{ children: React.ReactNode }> = ({
     };
 
     socket.on("new_message", handleNewMessage);
-    console.log("🎧 UnreadContext: Listener attached successfully");
 
     return () => {
-      console.log("🎧 UnreadContext: Removing listener");
       socket.off("new_message", handleNewMessage);
     };
   }, [socket]);

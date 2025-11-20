@@ -32,7 +32,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
     if (!user) {
       // Déconnecter le socket si pas d'utilisateur
       if (socket) {
-        console.log("🔌 Disconnecting global socket");
         socket.disconnect();
         setSocket(null);
       }
@@ -41,7 +40,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
 
     // Ne pas recréer si le socket existe déjà
     if (socket) {
-      console.log("🔌 Socket already exists, skipping setup");
       return;
     }
 
@@ -51,22 +49,16 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
         const baseURL = api.defaults.baseURL;
         const token = await AsyncStorage.getItem("accessToken");
 
-        console.log("🔌 Setting up global socket...");
-        console.log("🔌 BaseURL:", baseURL);
-        console.log("🔌 Token exists:", !!token);
-
         const newSocket = io(baseURL, {
           auth: { token },
         });
 
         newSocket.on("connect", () => {
-          console.log("✅ Global socket CONNECTED - ID:", newSocket.id);
           // Mettre à jour le state APRÈS la connexion
           setSocket(newSocket);
         });
 
         newSocket.on("disconnect", () => {
-          console.log("❌ Global socket DISCONNECTED");
           setSocket(null);
         });
 
@@ -74,7 +66,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
           console.log("❌ Global socket ERROR:", error);
         });
 
-        console.log("🔌 Global socket instance created (waiting for connection...)");
       } catch (err) {
         console.log("❌ Error setting up global socket:", err);
       }

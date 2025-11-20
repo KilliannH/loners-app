@@ -1,14 +1,16 @@
 // app/profile/index.tsx
+import { useToast } from "@/src/context/ToastContext";
 import { Ionicons } from "@expo/vector-icons";
+import { useRouter } from "expo-router";
 import React, { useState } from "react";
 import {
-    Alert,
-    Modal,
-    ScrollView,
-    StyleSheet,
-    Text,
-    TouchableOpacity,
-    View,
+  Alert,
+  Modal,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
 } from "react-native";
 import { api } from "../../src/api/client";
 import { BottomNav } from "../../src/components/BottomNav";
@@ -20,6 +22,8 @@ export default function ProfileScreen() {
   const { user, signOut } = useAuth();
   const [showRadiusModal, setShowRadiusModal] = useState(false);
   const [updatingRadius, setUpdatingRadius] = useState(false);
+  const router = useRouter();
+  const toast = useToast();
 
   const radiusOptions = [5, 10, 20, 50, 100];
 
@@ -29,7 +33,17 @@ export default function ProfileScreen() {
       "Es-tu sûr de vouloir te déconnecter ?",
       [
         { text: "Annuler", style: "cancel" },
-        { text: "Déconnexion", style: "destructive", onPress: signOut },
+        {
+          text: "Déconnexion", style: "destructive", onPress: () => {
+            signOut();
+            toast.info("À bientôt !");
+            setTimeout(() => {
+              router.replace({
+                pathname: "/"
+              });
+            }, 500);
+          }
+        },
       ]
     );
   };
@@ -39,11 +53,11 @@ export default function ProfileScreen() {
       setUpdatingRadius(true);
       await api.patch("/auth/me", { radiusKm: newRadius });
       setShowRadiusModal(false);
-      Alert.alert("Rayon mis à jour", `Ton rayon de recherche est maintenant de ${newRadius}km`);
+      toast.success(`Ton rayon de recherche est maintenant de ${newRadius}km`);
       // Le user sera rechargé au prochain refresh de la liste
     } catch (err: any) {
       console.log("Error updating radius:", err);
-      Alert.alert("Erreur", "Impossible de mettre à jour le rayon de recherche");
+      toast.error("Impossible de mettre à jour le rayon de recherche");
     } finally {
       setUpdatingRadius(false);
     }
@@ -223,7 +237,7 @@ export default function ProfileScreen() {
                     style={[
                       styles.radiusOptionText,
                       user?.radiusKm === radius &&
-                        styles.radiusOptionTextActive,
+                      styles.radiusOptionTextActive,
                     ]}
                   >
                     {radius} km

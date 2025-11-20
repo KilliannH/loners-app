@@ -3,13 +3,12 @@ import { Ionicons } from "@expo/vector-icons";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import React, { useEffect, useMemo, useState } from "react";
 import {
-    ActivityIndicator,
-    Alert,
-    ScrollView,
-    StyleSheet,
-    Text,
-    TouchableOpacity,
-    View,
+  ActivityIndicator,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View
 } from "react-native";
 import MapView, { Marker, PROVIDER_GOOGLE } from "react-native-maps";
 import { api } from "../../src/api/client";
@@ -18,6 +17,7 @@ import { useAuth } from "../../src/context/AuthContext";
 import { colors, radius, spacing, typography } from "../../src/styles/theme";
 import type { EventWithDetails } from "../../src/types/api";
 
+import { useToast } from "@/src/context/ToastContext";
 import { BottomNav } from "../../src/components/BottomNav";
 
 export default function EventDetailScreen() {
@@ -25,6 +25,7 @@ export default function EventDetailScreen() {
   const eventId = Number(id);
   const { user } = useAuth();
   const router = useRouter();
+  const toast = useToast();
 
   const [event, setEvent] = useState<EventWithDetails | null>(null);
   const [loading, setLoading] = useState(true);
@@ -38,7 +39,7 @@ export default function EventDetailScreen() {
       setEvent(res.data);
     } catch (err: any) {
       console.log("Error loading event", err?.response?.data || err?.message);
-      Alert.alert("Erreur", "Impossible de charger cet événement");
+      toast.error("Impossible de charger cet événement");
     } finally {
       setLoading(false);
     }
@@ -59,13 +60,10 @@ export default function EventDetailScreen() {
       setJoining(true);
       await api.post(`/events/${eventId}/join`);
       await loadEvent();
-      Alert.alert("Rejoint", "Tu participes maintenant à cet événement !");
+      toast.success("Tu participes maintenant à cet événement !");
     } catch (err: any) {
       console.log("Error joining event", err?.response?.data || err?.message);
-      Alert.alert(
-        "Erreur",
-        err?.response?.data?.message || "Impossible de rejoindre cet événement"
-      );
+      toast.error(err?.response?.data?.message || "Impossible de rejoindre cet événement");
     } finally {
       setJoining(false);
     }

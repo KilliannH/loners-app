@@ -5,7 +5,6 @@ import { useRouter } from "expo-router";
 import React, { useState } from "react";
 import {
   ActivityIndicator,
-  Alert,
   KeyboardAvoidingView,
   Platform,
   ScrollView,
@@ -13,10 +12,11 @@ import {
   Text,
   TextInput,
   TouchableOpacity,
-  View,
+  View
 } from "react-native";
 import DateTimePickerModal from "react-native-modal-datetime-picker";
 
+import { useToast } from "@/src/context/ToastContext";
 import { api } from "../../src/api/client";
 import { BottomNav } from "../../src/components/BottomNav";
 import { PrimaryButton } from "../../src/components/PrimaryButton";
@@ -32,6 +32,7 @@ type PlacePrediction = {
 
 export default function CreateEventScreen() {
   const router = useRouter();
+  const toast = useToast();
 
   const [title, setTitle] = useState("");
   const [type, setType] = useState("soirée");
@@ -103,10 +104,7 @@ export default function CreateEventScreen() {
 
   const handleSelectSuggestion = async (prediction: PlacePrediction) => {
     if (!GOOGLE_MAPS_API_KEY || GOOGLE_MAPS_API_KEY.startsWith("TA_CLE_")) {
-      Alert.alert(
-        "Clé API manquante",
-        "La clé Google Maps n'est pas configurée dans extra.googleMapsApiKey."
-      );
+      toast.error("La clé Google Maps n'est pas configurée dans extra.googleMapsApiKey.");
       return;
     }
 
@@ -124,10 +122,7 @@ export default function CreateEventScreen() {
 
       if (data.status !== "OK" || !data.results || data.results.length === 0) {
         console.log("Geocoding error:", data);
-        Alert.alert(
-          "Erreur",
-          "Impossible de récupérer les coordonnées de ce lieu."
-        );
+        toast.error("Impossible de récupérer les coordonnées de ce lieu.");
         return;
       }
 
@@ -140,27 +135,18 @@ export default function CreateEventScreen() {
       setAddressQuery(result.formatted_address);
     } catch (err: any) {
       console.log("Geocoding fetch error:", err?.message || err);
-      Alert.alert(
-        "Erreur",
-        "Impossible de récupérer les coordonnées de ce lieu."
-      );
+      toast.error("Impossible de récupérer les coordonnées de ce lieu.");
     }
   };
 
   const handleCreate = async () => {
     if (!title || !type || !description || !date) {
-      Alert.alert(
-        "Oups",
-        "Merci de remplir le titre, le type, la description et la date."
-      );
+      toast.warning("Merci de remplir le titre, le type, la description et la date.");
       return;
     }
 
     if (!address || latitude == null || longitude == null) {
-      Alert.alert(
-        "Lieu manquant",
-        "Choisis une adresse dans les suggestions pour localiser l'événement."
-      );
+      toast.warning("Choisis une adresse dans les suggestions pour localiser l'événement.");
       return;
     }
 
@@ -178,23 +164,17 @@ export default function CreateEventScreen() {
 
       const created = res.data;
 
-      Alert.alert("Événement créé", "Ton événement est en ligne 🎉", [
-        {
-          text: "Voir l'événement",
-          onPress: () =>
+      toast.success("Ton événement est en ligne 🎉");
+      
+      setTimeout( () => {
             router.replace({
               pathname: "/events/[id]",
               params: { id: String(created.id) },
-            }),
-        },
-      ]);
+            });
+      }, 500);
     } catch (err: any) {
       console.log(err?.response?.data || err?.message);
-      Alert.alert(
-        "Erreur",
-        err?.response?.data?.message ||
-          "Impossible de créer l'événement pour le moment."
-      );
+      toast.error(err?.response?.data?.message || "Impossible de créer l'événement pour le moment.");
     } finally {
       setLoading(false);
     }

@@ -1,14 +1,14 @@
 // app/index.tsx
+import { useToast } from "@/src/context/ToastContext";
 import { useRouter } from "expo-router";
 import React, { useEffect, useState } from "react";
 import {
-  Alert,
   KeyboardAvoidingView,
   Platform,
   StyleSheet,
   Text,
   TextInput,
-  View,
+  View
 } from "react-native";
 import { PrimaryButton } from "../src/components/PrimaryButton";
 import { useAuth } from "../src/context/AuthContext";
@@ -17,6 +17,7 @@ import { colors, radius, spacing, typography } from "../src/styles/theme";
 export default function IndexScreen() {
   const { user, signIn, signUp } = useAuth();
   const router = useRouter();
+  const toast = useToast();
 
   const [mode, setMode] = useState<"login" | "register">("login");
   const [email, setEmail] = useState("");
@@ -32,7 +33,7 @@ export default function IndexScreen() {
 
   const handleSubmit = async () => {
     if (!email || !password || (mode === "register" && !username)) {
-      Alert.alert("Oups", "Merci de remplir tous les champs.");
+      toast.warning("Merci de remplir tous les champs.");
       return;
     }
 
@@ -40,12 +41,14 @@ export default function IndexScreen() {
       setLoading(true);
       if (mode === "login") {
         await signIn(email.trim(), password);
+        toast.success("Connexion réussie !");
       } else {
         await signUp(email.trim(), username.trim(), password);
+        toast.success("Compte créé avec succès !");
       }
     } catch (err: any) {
       console.log(err?.response?.data || err?.message);
-      Alert.alert("Erreur", err?.response?.data?.message || "Une erreur est survenue");
+      toast.error(err?.response?.data?.message || "Une erreur est survenue");
     } finally {
       setLoading(false);
     }

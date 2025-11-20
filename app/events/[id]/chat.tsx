@@ -139,8 +139,6 @@ export default function EventChatScreen() {
       const baseURL = api.defaults.baseURL;
       const token = await AsyncStorage.getItem("accessToken");
 
-      console.log("💬 Chat: Creating LOCAL socket for chat");
-
       const socket = io(baseURL, {
         auth: { token },
       });
@@ -148,25 +146,19 @@ export default function EventChatScreen() {
       socketRef.current = socket;
 
       socket.on("connect", () => {
-        console.log("💬 Chat: LOCAL socket connected", socket.id);
         setSocketConnected(true);
         socket.emit("join_event", eventId);
       });
 
       socket.on("disconnect", () => {
-        console.log("💬 Chat: LOCAL socket disconnected");
         setSocketConnected(false);
       });
 
       socket.on("new_message", (message: ChatMessage) => {
-        console.log("💬 Chat: Message received in LOCAL socket");
-      console.log("💬 Chat: Is for this event?", message.eventId === eventId);
-
         if (message.eventId === eventId) {
           setMessages((prev) => [...prev, message]);
           // Marquer comme lu immédiatement puisqu'on est dans le chat
           markAsRead(eventId);
-          console.log("💬 Chat: Marked as read");
         }
         // Plus besoin d'incrémenter ici, c'est géré globalement dans UnreadContext
       });
